@@ -1,0 +1,25 @@
+# Private environment settings
+.env
+.env.*
+!.env.example
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+cache/
+tmp/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Dependency folders (if used in the future)
+vendor/
+node_modules/
