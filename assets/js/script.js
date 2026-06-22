@@ -1,12 +1,11 @@
+// Find the mobile menu elements on the page.
 const menuButton = document.querySelector('.menu-toggle');
-const menu = document.querySelector('#main-menu');
-const menuLinks = document.querySelectorAll('.main-nav a');
-const contactForm = document.querySelector('#contact-form');
-const formStatus = document.querySelector('#form-status');
+const navigation = document.querySelector('.header-navigation');
+const menuLinks = document.querySelectorAll('.main-menu a');
 
-// Open or close the navigation on small screens.
+// Open or close the menu when the hamburger button is clicked.
 function toggleMenu() {
-    const isOpen = menu.classList.toggle('open');
+    const isOpen = navigation.classList.toggle('open');
 
     menuButton.classList.toggle('active', isOpen);
     menuButton.setAttribute('aria-expanded', isOpen);
@@ -16,35 +15,18 @@ function toggleMenu() {
 
 menuButton.addEventListener('click', toggleMenu);
 
-// Close the mobile menu after a navigation link is selected.
+// Close the mobile menu after any menu link is selected.
 menuLinks.forEach((link) => {
     link.addEventListener('click', () => {
-        if (menu.classList.contains('open')) {
+        if (navigation.classList.contains('open')) {
             toggleMenu();
         }
     });
 });
 
-// Update the highlighted navigation link as the page is scrolled.
-const sections = document.querySelectorAll('header[id], section[id]');
-
-const sectionObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-            menuLinks.forEach((link) => {
-                link.classList.toggle('active', link.getAttribute('href') === `#${entry.target.id}`);
-            });
-        }
-    });
-}, { rootMargin: '-35% 0px -60% 0px' });
-
-sections.forEach((section) => sectionObserver.observe(section));
-
-// This is a front-end demo. It confirms the form without sending data anywhere.
-contactForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-
-    const name = document.querySelector('#name').value.trim();
-    formStatus.textContent = `Thanks, ${name}! Your message is ready. Form delivery can be added later.`;
-    contactForm.reset();
+// Close the mobile menu if the screen is resized to desktop width.
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 780 && navigation.classList.contains('open')) {
+        toggleMenu();
+    }
 });
