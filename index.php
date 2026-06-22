@@ -27,7 +27,7 @@
         </div>
     </div>
 
-    <!-- Main website header -->
+    <!-- Main website header: logo, menu, and action buttons share one row. -->
     <header class="site-header" id="home">
         <div class="container header-main">
             <a class="brand" href="#home" aria-label="Design24 Studio home">
@@ -42,80 +42,65 @@
                 <span></span><span></span><span></span>
             </button>
 
+            <div class="header-navigation" id="header-navigation">
+                <nav class="navigation-inner" aria-label="Main navigation">
+                    <ul class="main-menu">
+                        <li><a class="active" href="#home">Home</a></li>
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#services">Services</a></li>
+                        <li><a href="#portfolio">Portfolio</a></li>
+                        <li><a href="#videos">Videos</a></li>
+                        <li><a href="#team">Our Team</a></li>
+                        <li><a href="#office">Office &amp; Factory</a></li>
+                        <li><a href="#contact">Contact Us</a></li>
+                    </ul>
+                    <div class="header-actions mobile-actions">
+                        <a class="header-button outline-button" href="mailto:design24studio@gmail.com?subject=Consultation%20Request">Book a Consultation</a>
+                        <a class="header-button gold-button" href="https://wa.me/8801711293205" target="_blank" rel="noopener">WhatsApp Us</a>
+                    </div>
+                </nav>
+            </div>
+
             <div class="header-actions desktop-actions">
                 <a class="header-button outline-button" href="mailto:design24studio@gmail.com?subject=Consultation%20Request">Book a Consultation</a>
                 <a class="header-button gold-button" href="https://wa.me/8801711293205" target="_blank" rel="noopener">WhatsApp Us</a>
             </div>
-        </div>
-
-        <div class="header-navigation" id="header-navigation">
-            <nav class="container navigation-inner" aria-label="Main navigation">
-                <ul class="main-menu">
-                    <li><a class="active" href="#home">Home</a></li>
-                    <li><a href="#about">About Us</a></li>
-                    <li><a href="#services">Services</a></li>
-                    <li><a href="#portfolio">Portfolio</a></li>
-                    <li><a href="#videos">Videos</a></li>
-                    <li><a href="#team">Our Team</a></li>
-                    <li><a href="#office">Office &amp; Factory</a></li>
-                    <li><a href="#contact">Contact Us</a></li>
-                </ul>
-                <div class="header-actions mobile-actions">
-                    <a class="header-button outline-button" href="mailto:design24studio@gmail.com?subject=Consultation%20Request">Book a Consultation</a>
-                    <a class="header-button gold-button" href="https://wa.me/8801711293205" target="_blank" rel="noopener">WhatsApp Us</a>
-                </div>
-            </nav>
         </div>
     </header>
 
     <main>
         <!-- First-view hero section -->
         <section class="hero" aria-labelledby="hero-title">
-            <div class="container hero-grid">
+            <div class="hero-grid">
                 <div class="hero-copy">
-                    <p class="eyebrow"><span></span> Welcome to Design24 Studio</p>
-                    <h1 id="hero-title">Transforming Spaces Into <em>Timeless Experiences</em></h1>
-                    <p class="hero-description">From interior design and architectural planning to 3D visualization, customized furniture, and complete turnkey execution—we shape every detail around the way you live and work.</p>
+                    <p class="eyebrow">Welcome to Design24 Studio</p>
+                    <h1 id="hero-title">Transforming<br>Spaces Into<br><em>Timeless Experiences</em></h1>
+                    <div class="hero-description">
+                        <p>Design24 Studio provides professional interior design, architectural planning, 3D visualization, customized furniture, and complete project execution for residential and commercial spaces.</p>
+                        <p>From the initial concept to final installation, our experienced team delivers functional, elegant, and personalized spaces that reflect your lifestyle and vision.</p>
+                    </div>
                     <div class="hero-actions">
                         <a class="hero-button primary-button" href="#portfolio">Explore Our Portfolio <span aria-hidden="true">↗</span></a>
-                        <a class="hero-button secondary-button" href="mailto:design24studio@gmail.com?subject=Free%20Consultation">Get a Free Consultation</a>
-                    </div>
-                    <div class="hero-note">
-                        <span class="note-line"></span>
-                        <p>Thoughtful design. Refined materials.<br>Seamless delivery.</p>
+                        <a class="hero-button secondary-button" href="mailto:design24studio@gmail.com?subject=Free%20Consultation">Get a Free Consultation <span aria-hidden="true">›</span></a>
                     </div>
                 </div>
 
-                <!-- CSS-only interior room placeholder -->
-                <div class="interior-visual" role="img" aria-label="Stylized luxury living room placeholder">
-                    <div class="room-light"></div>
-                    <div class="wall-panel panel-one"></div>
-                    <div class="wall-panel panel-two"></div>
-                    <div class="art-frame"><span></span></div>
-                    <div class="floor-lamp"><span></span></div>
-                    <div class="sofa">
-                        <span class="sofa-back"></span>
-                        <span class="cushion cushion-one"></span>
-                        <span class="cushion cushion-two"></span>
-                        <span class="sofa-seat"></span>
-                    </div>
-                    <div class="side-table"><span></span></div>
-                    <div class="plant"><i></i><i></i><i></i><span></span></div>
-                    <div class="visual-caption"><span>Featured Concept</span><strong>Modern Serenity</strong></div>
-                    <div class="lifestyle-badge">We don’t just<br>design spaces,<br><strong>we design lifestyles.</strong></div>
+                <!-- The room is cropped from the supplied reference image. -->
+                <div class="interior-visual" role="img" aria-label="Luxury living room and kitchen interior">
+                    <div class="lifestyle-badge">We don’t just<br><strong>design spaces,</strong><br>we design<br><strong>lifestyles.</strong></div>
                 </div>
             </div>
-        </section>
 
-        <!-- Quick overview of studio services -->
-        <section class="service-strip" id="services" aria-label="Our interior design services">
-            <div class="container service-list">
+            <!-- Quick overview of studio services -->
+            <div class="service-strip" id="services" aria-label="Our interior design services">
+                <div class="service-list">
                 <a href="#residential"><span class="service-icon">⌂</span><strong>Residential</strong></a>
                 <a href="#commercial"><span class="service-icon">◇</span><strong>Commercial</strong></a>
                 <a href="#office"><span class="service-icon">▦</span><strong>Office</strong></a>
                 <a href="#kitchen"><span class="service-icon">▤</span><strong>Kitchen</strong></a>
                 <a href="#furniture"><span class="service-icon">▱</span><strong>Customized Furniture</strong></a>
                 <a href="#turnkey"><span class="service-icon">✓</span><strong>Turnkey Execution</strong></a>
+                </div>
             </div>
         </section>
     </main>
