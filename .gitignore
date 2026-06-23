@@ -23,3 +23,8 @@ Thumbs.db
 # Dependency folders (if used in the future)
 vendor/
 node_modules/
+
+# Local database and backups can contain private information
+database/*.sqlite
+database/*.sqlite-*
+backups/
