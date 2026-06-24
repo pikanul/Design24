@@ -12,7 +12,10 @@ log() {
     print -- "$(date '+%Y-%m-%d %H:%M:%S')  $*" >> "$LOG_FILE"
 }
 
-cd "$REPOSITORY"
+if ! cd "$REPOSITORY"; then
+    log "Failed: macOS denied background access to the project folder. Grant Full Disk Access to /bin/zsh."
+    exit 1
+fi
 
 if [[ "$(git rev-parse --abbrev-ref HEAD)" != "main" ]]; then
     log "Skipped: current branch is not main."

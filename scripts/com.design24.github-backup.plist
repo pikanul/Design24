@@ -7,7 +7,7 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/zsh</string>
-        <string>/Users/zaira/Desktop/my-php-project/Design24/scripts/github-backup.sh</string>
+        <string>/Users/zaira/Library/Application Support/Design24/github-backup.sh</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
