@@ -166,6 +166,36 @@ CREATE TABLE IF NOT EXISTS testimonials (
 
 CREATE INDEX IF NOT EXISTS idx_testimonials_display ON testimonials (status, sort_order, id);
 
+CREATE TABLE IF NOT EXISTS site_videos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title VARCHAR(220) NOT NULL,
+    description TEXT NULL,
+    video_type VARCHAR(20) NOT NULL DEFAULT 'url',
+    video_url VARCHAR(500) NULL,
+    video_file VARCHAR(500) NULL,
+    thumbnail VARCHAR(500) NULL,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_site_videos_display ON site_videos (status, display_order, id);
+
+CREATE TABLE IF NOT EXISTS office_media (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    media_type VARCHAR(10) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    title VARCHAR(220) NULL,
+    description TEXT NULL,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_office_media_display ON office_media (status, display_order, id);
+
 CREATE TABLE IF NOT EXISTS portfolio_categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(180) NOT NULL,
@@ -230,3 +260,55 @@ CREATE INDEX IF NOT EXISTS idx_portfolio_projects_display ON portfolio_projects 
 CREATE INDEX IF NOT EXISTS idx_portfolio_projects_category ON portfolio_projects (category_id, is_active, display_order);
 CREATE INDEX IF NOT EXISTS idx_portfolio_gallery_project ON portfolio_gallery (project_id, display_order, id);
 CREATE INDEX IF NOT EXISTS idx_portfolio_videos_project ON portfolio_videos (project_id, display_order, id);
+
+-- Consultation booking system
+CREATE TABLE IF NOT EXISTS consultation_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    business_days VARCHAR(60) NOT NULL DEFAULT '1,2,3,4,5,6',
+    admin_email VARCHAR(190) NULL,
+    smtp_host VARCHAR(190) NULL,
+    smtp_port INTEGER NULL,
+    smtp_username VARCHAR(190) NULL,
+    smtp_password_encrypted TEXT NULL,
+    smtp_encryption VARCHAR(20) NULL,
+    sender_name VARCHAR(190) NULL,
+    whatsapp_number VARCHAR(40) NULL,
+    whatsapp_template TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS consultation_bookings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    reference_number VARCHAR(40) NOT NULL UNIQUE,
+    full_name VARCHAR(180) NOT NULL,
+    mobile_number VARCHAR(40) NOT NULL,
+    email VARCHAR(190) NULL,
+    project_type VARCHAR(80) NOT NULL,
+    consultation_type VARCHAR(60) NOT NULL,
+    consultation_date DATE NOT NULL,
+    time_slot VARCHAR(20) NOT NULL,
+    project_location VARCHAR(300) NULL,
+    project_size VARCHAR(80) NULL,
+    budget_range VARCHAR(120) NULL,
+    project_details TEXT NULL,
+    terms_accepted INTEGER NOT NULL DEFAULT 0,
+    status VARCHAR(20) NOT NULL DEFAULT 'Pending',
+    admin_notes TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (consultation_date, time_slot)
+);
+
+CREATE TABLE IF NOT EXISTS consultation_attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    booking_id INTEGER NOT NULL,
+    stored_name VARCHAR(255) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    file_size INTEGER NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (booking_id) REFERENCES consultation_bookings(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_consultation_status_date ON consultation_bookings (status, consultation_date);

@@ -96,7 +96,7 @@ if (is_array($about)):
 </section>
 <section class="about-counter-section<?= $aboutHomeEnabled ? '' : ' about-module-home-disabled' ?>" aria-label="Design24 Studio achievements">
     <div class="about-container about-counter-grid">
-        <?php foreach ($aboutCounters as $counter): ?><article class="about-counter-card"><span class="about-counter-icon"><?= aboutPublicIcon((string)$counter['icon']) ?></span><p class="about-counter-value"><span class="counter-number" data-target="<?= max(0,(int)$counter['number']) ?>" data-duration="3000" data-suffix="<?= siteEscape($counter['suffix']) ?>">0</span></p><h3><?= siteEscape($counter['title']) ?></h3><?php if ($counter['description']): ?><p><?= siteEscape($counter['description']) ?></p><?php endif; ?></article><?php endforeach; ?>
+        <?php foreach ($aboutCounters as $counter): ?><?php $counterValue=max(0,(int)$counter['number']); ?><article class="about-counter-card"><span class="about-counter-icon"><?= aboutPublicIcon((string)$counter['icon']) ?></span><p class="about-counter-value"><span class="counter-number" data-target="<?= $counterValue ?>" data-duration="3000" data-suffix="<?= siteEscape($counter['suffix']) ?>">0</span></p><h3><?= siteEscape($counter['title']) ?></h3><?php if ($counter['description']): ?><p><?= siteEscape($counter['description']) ?></p><?php endif; ?></article><?php endforeach; ?>
     </div>
 </section>
 <?php endif; ?>

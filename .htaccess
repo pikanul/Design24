@@ -1,0 +1,28 @@
+# Production security rules for Apache/cPanel.
+# Keep private application files, databases, backups, dependencies, and setup assets
+# unreachable from browsers even if the project root is used as the document root.
+
+Options -Indexes
+
+<IfModule mod_authz_core.c>
+    <FilesMatch "(^\.env$|^composer\.(json|lock)$|^php\.ini$|\.(sqlite|sql|tar\.gz)$)">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+    <FilesMatch "(^\.env$|^composer\.(json|lock)$|^php\.ini$|\.(sqlite|sql|tar\.gz)$)">
+        Deny from all
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Never serve private folders.
+    RewriteRule (^|/)(database|backups|config|vendor)(/|$) - [F,L,NC]
+
+    # Never serve sensitive root/config artifacts.
+    RewriteRule (^|/)(composer\.(json|lock)|php\.ini|\.env)$ - [F,L,NC]
+    RewriteRule \.(sqlite|sql|tar\.gz)$ - [F,L,NC]
+</IfModule>

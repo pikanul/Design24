@@ -19,6 +19,7 @@ if ((int) $pdo->query('SELECT COUNT(*) FROM team_groups')->fetchColumn() > 0
 }
 
 $groups = [
+    ['Founders & Directors', 'founders-directors', 'Founders', 'The founders and directors guiding Design24 Studio.', 'briefcase', 0],
     ['Office & Management', 'office-management', 'Office', 'Leading with vision, managing with excellence, and driving the business forward.', 'briefcase', 1],
     ['Design & Field Team', 'design-field-team', 'Field', 'Designing spaces, planning solutions, and managing projects on the field.', 'compass', 2],
     ['Factory & Production Team', 'factory-production-team', 'Factory', 'Turning designs into reality with skill, precision, and dedication.', 'factory', 3],

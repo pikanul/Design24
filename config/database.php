@@ -5,13 +5,19 @@ declare(strict_types=1);
 /*
  * Central PDO connection.
  *
- * Development uses SQLite by default. To move to MySQL later, set the
- * DB_DRIVER, DB_HOST, DB_PORT, DB_NAME, DB_USER, and DB_PASSWORD environment
- * variables. The admin pages only call db(), so they will not need rebuilding.
+ * Development may use the bundled SQLite database when APP_ENV is not
+ * production. Production must be explicit:
+ *
+ *   MySQL:  DB_DRIVER=mysql, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+ *   SQLite: DB_DRIVER=sqlite, DATABASE_PATH=/absolute/private/path/design24.sqlite
+ *
+ * Do not put production passwords or private database paths in source code.
  */
 
 ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
 ini_set('log_errors', '1');
+error_reporting(E_ALL);
 
 /* Compatibility helpers for local servers still running PHP 7.4. */
 if (!function_exists('str_contains')) {
@@ -49,33 +55,110 @@ function db(): PDO
         return $connection;
     }
 
-    $driver = getenv('DB_DRIVER') ?: 'sqlite';
+    $environment = strtolower(trim((string) (getenv('APP_ENV') ?: 'development')));
+    $isProduction = in_array($environment, ['production', 'prod'], true);
+    $driver = strtolower(trim((string) (getenv('DB_DRIVER') ?: '')));
+
+    if ($isProduction && $driver === '') {
+        throw new RuntimeException('Production database driver is not configured.');
+    }
+
+    if ($driver === '') {
+        $driver = 'sqlite';
+    }
 
     if ($driver === 'sqlite') {
-        $databasePath = dirname(__DIR__) . '/database/design24.sqlite';
+        $databasePath = databaseSqlitePath($isProduction);
         $dsn = 'sqlite:' . $databasePath;
         $username = null;
         $password = null;
     } elseif ($driver === 'mysql') {
-        $host = getenv('DB_HOST') ?: '127.0.0.1';
-        $port = getenv('DB_PORT') ?: '3306';
-        $name = getenv('DB_NAME') ?: '';
+        $host = requiredDatabaseEnv('DB_HOST');
+        $port = requiredDatabaseEnv('DB_PORT');
+        $name = requiredDatabaseEnv('DB_NAME');
         $dsn = "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4";
-        $username = getenv('DB_USER') ?: '';
-        $password = getenv('DB_PASSWORD') ?: '';
+        $username = requiredDatabaseEnv('DB_USER');
+        $password = requiredDatabaseEnv('DB_PASSWORD', false);
     } else {
         throw new RuntimeException('Unsupported database driver.');
     }
 
-    $connection = new PDO($dsn, $username, $password, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
-    ]);
+    try {
+        $connection = new PDO($dsn, $username, $password, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
 
-    if ($driver === 'sqlite') {
-        $connection->exec('PRAGMA foreign_keys = ON');
+        if ($driver === 'sqlite') {
+            $connection->exec('PRAGMA foreign_keys = ON');
+        }
+    } catch (PDOException $exception) {
+        error_log('Database connection failed: ' . $exception->getMessage());
+        throw new RuntimeException('Database connection failed. Please contact the site administrator.');
     }
 
     return $connection;
+}
+
+function requiredDatabaseEnv(string $name, bool $trim = true): string
+{
+    $value = getenv($name);
+    $value = is_string($value) ? ($trim ? trim($value) : $value) : '';
+
+    if ($value === '') {
+        throw new RuntimeException("Required database environment variable {$name} is missing.");
+    }
+
+    return $value;
+}
+
+function databaseSqlitePath(bool $isProduction): string
+{
+    $configuredPath = getenv('DATABASE_PATH');
+    $configuredPath = is_string($configuredPath) ? trim($configuredPath) : '';
+
+    if ($configuredPath === '') {
+        if ($isProduction) {
+            throw new RuntimeException('Production SQLite database path is not configured.');
+        }
+
+        $configuredPath = dirname(__DIR__) . '/database/design24.sqlite';
+    }
+
+    if (!str_starts_with($configuredPath, DIRECTORY_SEPARATOR)) {
+        throw new RuntimeException('SQLite DATABASE_PATH must be an absolute private filesystem path.');
+    }
+
+    $databaseDirectory = dirname($configuredPath);
+    if (!is_dir($databaseDirectory)) {
+        throw new RuntimeException('SQLite database directory does not exist.');
+    }
+
+    if ($isProduction && pathIsInside($configuredPath, dirname(__DIR__))) {
+        throw new RuntimeException('Production SQLite database must be outside the public website folder.');
+    }
+
+    return $configuredPath;
+}
+
+function pathIsInside(string $path, string $directory): bool
+{
+    $resolvedDirectory = realpath($directory);
+    $resolvedPath = realpath($path);
+
+    if ($resolvedDirectory === false) {
+        return false;
+    }
+
+    if ($resolvedPath === false) {
+        $parent = realpath(dirname($path));
+        if ($parent === false) {
+            return false;
+        }
+        $resolvedPath = rtrim($parent, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . basename($path);
+    }
+
+    $resolvedDirectory = rtrim($resolvedDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+    return str_starts_with($resolvedPath, $resolvedDirectory);
 }

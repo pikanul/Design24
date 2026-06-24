@@ -32,7 +32,7 @@ if ($publicTestimonials !== []):
             </div></div>
             <?php if(count($publicTestimonials)>1):?><button class="testimonial-arrow testimonial-prev" type="button" aria-label="Previous testimonials">←</button><button class="testimonial-arrow testimonial-next" type="button" aria-label="Next testimonials">→</button><div class="testimonial-dots" role="group" aria-label="Choose testimonial"><?php foreach($publicTestimonials as$i=>$testimonial):?><button class="testimonial-dot<?=$i===0?' active':''?>" type="button" data-testimonial-index="<?=$i?>" aria-label="Show testimonial <?=($i+1)?>" aria-current="<?=$i===0?'true':'false'?>"></button><?php endforeach;?></div><?php endif;?>
         </div>
-        <div class="testimonial-all-action"><a href="testimonials">View Full Feedback</a></div>
+        <div class="testimonial-all-action"><a href="testimonials">View Full Feedback</a><a href="/give-feedback" style="margin-left:10px;background:#fff;color:#07553e">Give Your Valuable Feedback</a></div>
     </div>
 </section>
 <?php endif; ?>

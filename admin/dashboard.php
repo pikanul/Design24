@@ -28,12 +28,12 @@ require __DIR__ . '/includes/header.php';
             <article class="placeholder">
                 <h2>Website Settings</h2>
                 <p>Manage public website branding and shared layout areas.</p>
-                <div class="settings-links"><a href="header-settings.php">Header Settings</a><a href="footer-settings.php">Footer Settings</a><a href="audio-settings.php">Website Audio</a><a href="visitor-report.php">Visitor Analytics</a><a href="testimonials.php">Client Feedback</a></div>
+                <div class="settings-links"><a href="header-settings.php">Header Settings</a><a href="footer-settings.php">Footer Settings</a><a href="audio-settings.php">Website Audio</a><a href="videos.php">Video Gallery</a><a href="visitor-report.php">Visitor Analytics</a><a href="testimonials.php">Client Feedback</a></div>
             </article>
             <article class="placeholder">
                 <h2>Homepage Settings</h2>
                 <p>Manage the homepage hero and dynamic About Us content.</p>
-                <div class="settings-links"><a href="hero-settings.php">Hero Media</a><a href="about-settings.php">About Us Settings</a></div>
+                <div class="settings-links"><a href="hero-settings.php">Hero Media</a><a href="about-settings.php">About Us Settings</a><a href="office-settings.php">Office &amp; Factory</a></div>
             </article>
             <article class="placeholder">
                 <h2>Team Management</h2>
@@ -44,6 +44,11 @@ require __DIR__ . '/includes/header.php';
                 <h2>Portfolio Management</h2>
                 <p>Manage portfolio categories, projects, gallery images, videos, SEO, and display order.</p>
                 <div class="settings-links"><a href="portfolio/dashboard.php">Dashboard</a><a href="portfolio/categories.php">Categories</a><a href="portfolio/projects.php">Projects</a><a href="portfolio/gallery.php">Gallery</a><a href="portfolio/videos.php">Videos</a></div>
+            </article>
+            <article class="placeholder">
+                <h2>Consultation Management</h2>
+                <p>Review requests, manage appointment status, availability, and client notes.</p>
+                <div class="settings-links"><a href="consultations.php">Manage Consultations</a><a href="communication-settings.php">Email &amp; WhatsApp Settings</a></div>
             </article>
         </div>
     </section>

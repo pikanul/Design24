@@ -1,0 +1,6 @@
+# Apache/cPanel: never serve application configuration over HTTP.
+Require all denied
+
+<IfModule !mod_authz_core.c>
+    Deny from all
+</IfModule>

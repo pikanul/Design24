@@ -22,7 +22,7 @@ $whatsappLink = whatsappUrl($headerSettings['whatsapp']);
 $phoneDigits = preg_replace('/\D+/', '', $headerSettings['phone']) ?? '';
 $whatsappDigits = preg_replace('/\D+/', '', $headerSettings['whatsapp']) ?? '';
 $sameContactNumber = $phoneDigits !== '' && $phoneDigits === $whatsappDigits;
-$consultationLink = safePageUrl($headerSettings['consultation_button_url'], '#contact');
+$consultationLink = '/consultation-booking.php';
 $socialLinks = [
     ['name' => 'Facebook', 'symbol' => 'f', 'url' => safeExternalUrl($headerSettings['facebook_url'])],
     ['name' => 'YouTube', 'symbol' => '▶', 'url' => safeExternalUrl($headerSettings['youtube_url'])],
@@ -37,6 +37,7 @@ if (settingEnabled($headerSettings, 'header_scroll_shadow')) {
     $headerClasses[] = 'scroll-shadow-enabled';
 }
 $portfolioMenuTree = getPortfolioMenuTree();
+$hiddenPortfolioMenuSlugs = ['ongoing-projects', 'completed-projects', 'project-videos'];
 ?>
 <?php if (settingEnabled($headerSettings, 'show_top_bar')): ?>
     <div class="top-bar">
@@ -94,17 +95,19 @@ $portfolioMenuTree = getPortfolioMenuTree();
                         <ul class="sub-menu">
                             <li><a href="/portfolio.php">All Portfolio</a></li>
                             <?php foreach ($portfolioMenuTree as $portfolioCategory): ?>
+                                <?php if (in_array($portfolioCategory['slug'], $hiddenPortfolioMenuSlugs, true)) continue; ?>
                                 <li><a href="/portfolio/<?= siteEscape($portfolioCategory['slug']) ?>"><?= siteEscape($portfolioCategory['name']) ?></a></li>
                                 <?php foreach ($portfolioCategory['children'] as $portfolioChild): ?>
+                                    <?php if (in_array($portfolioChild['slug'], $hiddenPortfolioMenuSlugs, true)) continue; ?>
                                     <li><a href="/portfolio/<?= siteEscape($portfolioChild['slug']) ?>">— <?= siteEscape($portfolioChild['name']) ?></a></li>
                                 <?php endforeach; ?>
                             <?php endforeach; ?>
                         </ul>
                     </li>
-                    <li><a href="<?= $homepagePrefix ?>#videos">Videos</a></li>
+                    <li><a href="/videos.php">Videos</a></li>
                     <li><a<?= $currentPublicPage === 'team.php' ? ' class="active"' : '' ?> href="team.php">Our Team</a></li>
-                    <li><a href="<?= $homepagePrefix ?>#office">Office &amp; Factory</a></li>
-                    <li><a href="#contact">Contact Us</a></li>
+                    <li><a href="/office.php">Office &amp; Factory</a></li>
+                    <li><a href="#contact-actions">Contact Us</a></li>
                 </ul>
                 <div class="header-actions mobile-actions">
                     <?php if (settingEnabled($headerSettings, 'show_consultation_button')): ?>

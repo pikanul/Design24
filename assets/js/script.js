@@ -366,7 +366,7 @@ if (aboutSlider) {
     }
 }
 
-// Infinite Client Feedback carousel. Autoplay moves visually from left to right.
+// Infinite Client Feedback carousel. Autoplay always moves visually to the left.
 const testimonialSlider = document.querySelector('[data-testimonial-slider]');
 
 if (testimonialSlider) {
@@ -378,8 +378,9 @@ if (testimonialSlider) {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     let cloneCount = 0;
     let currentIndex = 0;
-    let timer = null;
-    let paused = false;
+    let animationFrame = null;
+    let continuousOffset = 0;
+    let lastFrameTime = 0;
     let resizeTimer = null;
 
     function testimonialVisibleCount() {
@@ -409,26 +410,47 @@ if (testimonialSlider) {
 
     function positionTestimonials(animate = true) {
         track.style.transition = animate ? '' : 'none';
-        track.style.transform = `translate3d(${-currentIndex * testimonialStep()}px,0,0)`;
+        continuousOffset = currentIndex * testimonialStep();
+        track.style.transform = `translate3d(${-continuousOffset}px,0,0)`;
         updateTestimonialDots();
         if (!animate) window.requestAnimationFrame(() => { track.style.transition = ''; });
     }
 
     function clearTestimonialTimer() {
-        if (timer !== null) window.clearTimeout(timer);
-        timer = null;
+        if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
+        animationFrame = null;
     }
 
     function scheduleTestimonials() {
         clearTestimonialTimer();
-        if (originalCards.length > 1 && !paused && !document.hidden && !reducedMotion.matches) {
-            timer = window.setTimeout(() => moveTestimonials(-1), 4500);
+        if (originalCards.length > 1 && !document.hidden && !reducedMotion.matches) {
+            lastFrameTime = performance.now();
+            const moveContinuously = (now) => {
+                const step = testimonialStep();
+                if (!step) return;
+                continuousOffset += ((now - lastFrameTime) / 1000) * 18;
+                lastFrameTime = now;
+                const loopEnd = (cloneCount + originalCards.length) * step;
+                if (continuousOffset >= loopEnd) continuousOffset -= originalCards.length * step;
+                currentIndex = Math.floor(continuousOffset / step);
+                track.style.transition = 'none';
+                track.style.transform = `translate3d(${-continuousOffset}px,0,0)`;
+                updateTestimonialDots();
+                animationFrame = window.requestAnimationFrame(moveContinuously);
+            };
+            animationFrame = window.requestAnimationFrame(moveContinuously);
         }
     }
 
     function moveTestimonials(direction) {
-        currentIndex += direction;
-        positionTestimonials(true);
+        const step = testimonialStep();
+        continuousOffset += direction * step;
+        const loopStart = cloneCount * step;
+        const loopEnd = (cloneCount + originalCards.length) * step;
+        if (continuousOffset < loopStart) continuousOffset += originalCards.length * step;
+        if (continuousOffset >= loopEnd) continuousOffset -= originalCards.length * step;
+        currentIndex = Math.round(continuousOffset / step);
+        positionTestimonials(false);
         scheduleTestimonials();
     }
 
@@ -457,28 +479,13 @@ if (testimonialSlider) {
 
     if (originalCards.length > 1) {
         buildTestimonialLoop();
-        track.addEventListener('transitionend', () => {
-            if (currentIndex < cloneCount) {
-                currentIndex += originalCards.length;
-                positionTestimonials(false);
-            } else if (currentIndex >= cloneCount + originalCards.length) {
-                currentIndex -= originalCards.length;
-                positionTestimonials(false);
-            }
-        });
         previousButton.addEventListener('click', () => moveTestimonials(-1));
         nextButton.addEventListener('click', () => moveTestimonials(1));
         dots.forEach((dot) => dot.addEventListener('click', () => {
             currentIndex = cloneCount + Number(dot.dataset.testimonialIndex);
-            positionTestimonials(true);
+            positionTestimonials(false);
             scheduleTestimonials();
         }));
-        testimonialSlider.addEventListener('mouseenter', () => { paused = true; clearTestimonialTimer(); });
-        testimonialSlider.addEventListener('mouseleave', () => { paused = false; scheduleTestimonials(); });
-        testimonialSlider.addEventListener('focusin', () => { paused = true; clearTestimonialTimer(); });
-        testimonialSlider.addEventListener('focusout', (event) => {
-            if (!testimonialSlider.contains(event.relatedTarget)) { paused = false; scheduleTestimonials(); }
-        });
         window.addEventListener('resize', () => {
             window.clearTimeout(resizeTimer);
             resizeTimer = window.setTimeout(buildTestimonialLoop, 180);
@@ -499,6 +506,7 @@ if (counterNumbers.length > 0) {
         const duration = Math.max(1, Number(counter.dataset.duration) || 3000);
         const suffix = counter.dataset.suffix || '';
         const startTime = performance.now();
+        counter.textContent = '0';
 
         const update = (now) => {
             const progress = Math.min((now - startTime) / duration, 1);
@@ -519,7 +527,10 @@ if (counterNumbers.length > 0) {
                 }
             });
         }, { threshold: 0.2 });
-        if (counterSection) counterObserver.observe(counterSection);
+        if (counterSection) {
+            counterObserver.observe(counterSection);
+            if (counterSection.getBoundingClientRect().top < window.innerHeight) counterNumbers.forEach(animateCounter);
+        }
         else counterNumbers.forEach(animateCounter);
     } else {
         counterNumbers.forEach(animateCounter);
@@ -588,29 +599,39 @@ if (teamModal) {
     });
 }
 
-// Portfolio filters, live search, sorting, and progressive loading.
+// Portfolio category carousels, filters, live search, and sorting.
 const portfolioGrid = document.querySelector('[data-portfolio-grid]');
 if (portfolioGrid) {
     const cards = Array.from(portfolioGrid.querySelectorAll('.portfolio-card'));
+    const categoryGroups = Array.from(portfolioGrid.querySelectorAll('.portfolio-category-group'));
     const filterBar = document.querySelector('[data-portfolio-filter]');
     const searchInput = document.querySelector('[data-portfolio-search]');
     const sortInput = document.querySelector('[data-portfolio-sort]');
-    const loadMoreButton = document.querySelector('[data-portfolio-load-more]');
     const emptyMessage = document.querySelector('[data-portfolio-empty]');
     let activeCategory = portfolioGrid.dataset.initialFilter || 'all';
-    let activeStatus = '';
-    let activeType = '';
-    let shownCards = 6;
+    let activeStatus = portfolioGrid.dataset.initialStatus || '';
+    let activeType = portfolioGrid.dataset.initialType || '';
 
-    if (activeCategory !== 'all' && filterBar) {
+    if (filterBar) {
         filterBar.querySelectorAll('button').forEach((button) => {
-            button.classList.toggle('active', button.dataset.filter === activeCategory);
+            button.classList.toggle('active', button.dataset.filter === activeCategory || button.dataset.status === activeStatus || button.dataset.type === activeType);
         });
     }
 
+    const updateCategoryTrack = (group, animate = true) => {
+        const track = group.querySelector('[data-category-track]');
+        const visibleCards = Array.from(track.querySelectorAll('.portfolio-card:not([hidden])'));
+        if (visibleCards.length === 0) return;
+        const current = Math.min(Number(group.dataset.carouselIndex || 0), visibleCards.length - 1);
+        group.dataset.carouselIndex = String(current);
+        track.style.transition = animate ? '' : 'none';
+        track.style.transform = `translate3d(${-current * 100}%,0,0)`;
+        if (!animate) window.requestAnimationFrame(() => { track.style.transition = ''; });
+    };
+
     const applyPortfolioFilters = () => {
         const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
-        let visibleCount = 0;
+        let visibleGroupCount = 0;
         cards.forEach((card) => {
             const categories = (card.dataset.category || '').split(/\s+/);
             const status = card.dataset.status || '';
@@ -620,26 +641,39 @@ if (portfolioGrid) {
             const statusMatches = activeStatus === '' || status === activeStatus;
             const typeMatches = activeType === '' || type === activeType;
             const searchMatches = query === '' || search.includes(query);
-            const visible = categoryMatches && statusMatches && typeMatches && searchMatches;
-            if (visible) visibleCount += 1;
-            card.hidden = !visible || visibleCount > shownCards;
+            card.hidden = !(categoryMatches && statusMatches && typeMatches && searchMatches);
         });
-        if (emptyMessage) emptyMessage.hidden = visibleCount !== 0;
-        if (loadMoreButton) loadMoreButton.hidden = visibleCount <= shownCards;
+        categoryGroups.forEach((group) => {
+            const hasVisibleCards = Boolean(group.querySelector('.portfolio-card:not([hidden])'));
+            group.hidden = !hasVisibleCards;
+            group.dataset.carouselIndex = '0';
+            if (hasVisibleCards) {
+                visibleGroupCount += 1;
+                updateCategoryTrack(group, false);
+            }
+        });
+        if (emptyMessage) emptyMessage.hidden = visibleGroupCount !== 0;
     };
 
     const sortPortfolioCards = () => {
         if (!sortInput) return;
         const selected = sortInput.value;
-        const ordered = [...cards].sort((a, b) => {
-            if (selected === 'completed' || selected === 'ongoing') {
-                const preferred = selected === 'completed' ? 'Completed' : 'Ongoing';
-                return (b.dataset.status === preferred) - (a.dataset.status === preferred);
-            }
-            const orderA = Number(a.dataset.order || 0), orderB = Number(b.dataset.order || 0);
-            return selected === 'oldest' ? orderA - orderB : orderB - orderA;
+        categoryGroups.forEach((group) => {
+            const track = group.querySelector('[data-category-track]');
+            const groupCards = Array.from(track.querySelectorAll('.portfolio-card'));
+            groupCards.sort((a, b) => {
+                if (selected === 'completed' || selected === 'ongoing') {
+                    const preferred = selected === 'completed' ? 'Completed' : 'Ongoing';
+                    return Number(b.dataset.status === preferred) - Number(a.dataset.status === preferred);
+                }
+                const orderA = Number(a.dataset.order || 0);
+                const orderB = Number(b.dataset.order || 0);
+                return selected === 'oldest' ? orderB - orderA : orderA - orderB;
+            });
+            groupCards.forEach((card) => track.appendChild(card));
+            group.dataset.carouselIndex = '0';
+            updateCategoryTrack(group, false);
         });
-        ordered.forEach((card) => portfolioGrid.appendChild(card));
     };
 
     if (filterBar) {
@@ -653,14 +687,29 @@ if (portfolioGrid) {
             activeType = button.dataset.type || '';
             if (button.dataset.status) activeCategory = 'all';
             if (button.dataset.type) activeCategory = 'all';
-            shownCards = 6;
             applyPortfolioFilters();
         });
     }
 
     if (searchInput) searchInput.addEventListener('input', applyPortfolioFilters);
     if (sortInput) sortInput.addEventListener('change', () => { sortPortfolioCards(); applyPortfolioFilters(); });
-    if (loadMoreButton) loadMoreButton.addEventListener('click', () => { shownCards += 6; applyPortfolioFilters(); });
+
+    categoryGroups.forEach((group) => {
+        const move = (direction) => {
+            const visibleCards = Array.from(group.querySelectorAll('.portfolio-card:not([hidden])'));
+            if (visibleCards.length < 2) return;
+            const current = Number(group.dataset.carouselIndex || 0);
+            group.dataset.carouselIndex = String((current + direction + visibleCards.length) % visibleCards.length);
+            updateCategoryTrack(group);
+        };
+        group.querySelector('[data-category-previous]')?.addEventListener('click', () => move(-1));
+        group.querySelector('[data-category-next]')?.addEventListener('click', () => move(1));
+        let timer = window.setInterval(() => {
+            if (!document.hidden && !group.hidden && !group.matches(':hover') && !group.contains(document.activeElement)) move(1);
+        }, 4500);
+        group.addEventListener('remove', () => window.clearInterval(timer), { once: true });
+    });
+
     sortPortfolioCards();
     applyPortfolioFilters();
 }
