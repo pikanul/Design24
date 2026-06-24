@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/environment.php';
+require_once __DIR__ . '/security-headers.php';
+
 /*
  * Central PDO connection.
  *
@@ -18,6 +21,21 @@ ini_set('display_errors', '0');
 ini_set('display_startup_errors', '0');
 ini_set('log_errors', '1');
 error_reporting(E_ALL);
+
+$runtimeEnvironment = strtolower(trim((string) (getenv('APP_ENV') ?: 'development')));
+if (in_array($runtimeEnvironment, ['production', 'prod'], true)) {
+    $errorLog = trim((string) getenv('PHP_ERROR_LOG'));
+    $websiteRoot = dirname(__DIR__);
+    if ($errorLog === '' || $errorLog[0] !== DIRECTORY_SEPARATOR
+        || strncmp($errorLog, rtrim($websiteRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR, strlen(rtrim($websiteRoot, DIRECTORY_SEPARATOR)) + 1) === 0) {
+        throw new RuntimeException('Production PHP error logging must use an absolute path outside the website directory.');
+    }
+    $logDirectory = dirname($errorLog);
+    if (!is_dir($logDirectory) || !is_writable($logDirectory)) {
+        throw new RuntimeException('Production PHP error log directory is unavailable.');
+    }
+    ini_set('error_log', $errorLog);
+}
 
 /* Compatibility helpers for local servers still running PHP 7.4. */
 if (!function_exists('str_contains')) {
@@ -79,6 +97,9 @@ function db(): PDO
         $dsn = "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4";
         $username = requiredDatabaseEnv('DB_USER');
         $password = requiredDatabaseEnv('DB_PASSWORD', false);
+        if ($isProduction && $password === '') {
+            throw new RuntimeException('Required environment variable DB_PASSWORD is missing.');
+        }
     } else {
         throw new RuntimeException('Unsupported database driver.');
     }

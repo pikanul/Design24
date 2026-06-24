@@ -75,3 +75,36 @@ Different Namecheap/cPanel plans expose PHP environment variables differently. U
 - A private server-level include outside `public_html`, if your hosting support provides one.
 
 Avoid hardcoding secrets in PHP files inside `public_html`.
+
+## Required SMTP encryption key
+
+Create a private environment file outside `public_html`:
+
+```text
+/home/cpaneluser/design24-private/.env
+```
+
+Create the matching private log folder and add this required production variable:
+
+```text
+/home/cpaneluser/design24-private/logs/
+PHP_ERROR_LOG=/home/cpaneluser/design24-private/logs/php-error.log
+```
+
+The log folder must be writable by PHP and must remain outside `public_html`.
+
+Copy the variable names from `.env.example`, then set a unique value for:
+
+```text
+CONSULTATION_SETTINGS_KEY=your-long-random-secret
+```
+
+Generate it on a trusted computer or in cPanel **Terminal**:
+
+```sh
+php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"
+```
+
+The application automatically reads `/home/cpaneluser/design24-private/.env`; do not upload this file to `public_html`. Set its permission to `600` or `640`.
+
+If the SMTP password was saved before this key was configured or the key is changed, open **Admin → Communication Settings**, enter the Gmail App Password again, and save. Old encrypted passwords cannot be recovered with a new key.

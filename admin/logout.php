@@ -9,20 +9,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !csrfIsValid(isset($_POST['csrf_tok
     exit('Invalid request.');
 }
 
-$_SESSION = [];
-
-if (ini_get('session.use_cookies')) {
-    $parameters = session_get_cookie_params();
-    setcookie(session_name(), '', [
-        'expires' => time() - 42000,
-        'path' => $parameters['path'],
-        'domain' => $parameters['domain'],
-        'secure' => (bool) $parameters['secure'],
-        'httponly' => (bool) $parameters['httponly'],
-        'samesite' => 'Strict',
-    ]);
-}
-
-session_destroy();
+destroyAdminSession();
 header('Location: login.php');
 exit;

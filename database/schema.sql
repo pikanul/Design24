@@ -11,6 +11,35 @@ CREATE TABLE IF NOT EXISTS admins (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Security audit trail for the admin sign-in form. Never store passwords here.
+CREATE TABLE IF NOT EXISTS admin_login_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email VARCHAR(190) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    outcome VARCHAR(20) NOT NULL,
+    occurred_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_login_attempts_email_time
+    ON admin_login_attempts (email, occurred_at);
+CREATE INDEX IF NOT EXISTS idx_admin_login_attempts_ip_time
+    ON admin_login_attempts (ip_address, occurred_at);
+
+-- Public-form abuse audit trail. Form values and uploaded filenames are not logged.
+CREATE TABLE IF NOT EXISTS public_form_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    form_name VARCHAR(80) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    session_hash CHAR(64) NOT NULL,
+    event_type VARCHAR(40) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_public_form_events_ip_time
+    ON public_form_events (form_name, ip_address, created_at);
+CREATE INDEX IF NOT EXISTS idx_public_form_events_session_time
+    ON public_form_events (form_name, session_hash, created_at);
+
 CREATE TABLE IF NOT EXISTS site_settings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     setting_group VARCHAR(100) NOT NULL,

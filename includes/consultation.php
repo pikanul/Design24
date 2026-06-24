@@ -43,6 +43,31 @@ function consultationBookedSlots(PDO $pdo, string $date): array
 }
 function consultationCsrf(): string { if (session_status() !== PHP_SESSION_ACTIVE) session_start(); if (empty($_SESSION['consultation_csrf'])) $_SESSION['consultation_csrf'] = bin2hex(random_bytes(32)); return $_SESSION['consultation_csrf']; }
 function consultationCsrfValid(?string $value): bool { return is_string($value) && isset($_SESSION['consultation_csrf']) && hash_equals($_SESSION['consultation_csrf'], $value); }
+function consultationAttachmentDirectory(): string
+{
+    $configured = trim((string) getenv('CONSULTATION_ATTACHMENT_DIR'));
+    $projectRoot = dirname(__DIR__);
+    $environment = strtolower(trim((string) (getenv('APP_ENV') ?: 'development')));
+    if ($configured === '' && in_array($environment, ['production', 'prod'], true)) {
+        error_log('CONSULTATION_ATTACHMENT_DIR is missing in production.');
+        throw new RuntimeException('Private consultation attachment storage is not configured.');
+    }
+    $directory = $configured !== '' ? $configured : dirname($projectRoot) . '/design24-private/consultations';
+    if ($directory === '' || $directory[0] !== DIRECTORY_SEPARATOR) throw new RuntimeException('Consultation attachment storage must be an absolute private path.');
+    $directory = rtrim($directory, DIRECTORY_SEPARATOR);
+    if (str_starts_with($directory . DIRECTORY_SEPARATOR, rtrim($projectRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR)) throw new RuntimeException('Consultation attachment storage must be outside the web root.');
+    if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) throw new RuntimeException('Private attachment storage is unavailable.');
+    return $directory;
+}
+function consultationAttachmentPath(string $storedName): string
+{
+    $storedName = basename($storedName);
+    if (!preg_match('/^[a-f0-9]{40}\.(?:jpg|png|webp)$/', $storedName)) return '';
+    $privatePath = consultationAttachmentDirectory() . DIRECTORY_SEPARATOR . $storedName;
+    if (is_file($privatePath)) return $privatePath;
+    $legacyPath = dirname(__DIR__) . '/uploads/consultations/' . $storedName;
+    return is_file($legacyPath) ? $legacyPath : '';
+}
 function consultationReference(PDO $pdo, string $date): string
 {
     $prefix = 'CONS-' . str_replace('-', '', $date) . '-';
@@ -51,10 +76,28 @@ function consultationReference(PDO $pdo, string $date): string
 }
 function consultationSettingsKey(): string
 {
-    return hash('sha256', getenv('CONSULTATION_SETTINGS_KEY') ?: __DIR__ . 'design24-consultation', true);
+    $key = trim((string) getenv('CONSULTATION_SETTINGS_KEY'));
+    if ($key === '') {
+        error_log('CONSULTATION_SETTINGS_KEY is missing; SMTP password encryption/decryption was blocked.');
+        throw new RuntimeException('SMTP encryption is not configured.');
+    }
+    return hash('sha256', $key, true);
 }
-function consultationEncrypt(string $plain): string { $iv=random_bytes(16); return base64_encode($iv.openssl_encrypt($plain,'AES-256-CBC',consultationSettingsKey(),OPENSSL_RAW_DATA,$iv)); }
-function consultationDecrypt(string $cipher): string { $raw=base64_decode($cipher,true); if($raw===false||strlen($raw)<17)return ''; $iv=substr($raw,0,16); return openssl_decrypt(substr($raw,16),'AES-256-CBC',consultationSettingsKey(),OPENSSL_RAW_DATA,$iv) ?: ''; }
+function consultationEncrypt(string $plain): string
+{
+    $iv = random_bytes(16);
+    $cipher = openssl_encrypt($plain, 'AES-256-CBC', consultationSettingsKey(), OPENSSL_RAW_DATA, $iv);
+    if ($cipher === false) throw new RuntimeException('SMTP password encryption failed.');
+    return base64_encode($iv . $cipher);
+}
+function consultationDecrypt(string $cipher): string
+{
+    $raw = base64_decode($cipher, true);
+    if ($raw === false || strlen($raw) < 17) throw new RuntimeException('Stored SMTP password is invalid.');
+    $plain = openssl_decrypt(substr($raw, 16), 'AES-256-CBC', consultationSettingsKey(), OPENSSL_RAW_DATA, substr($raw, 0, 16));
+    if (!is_string($plain) || $plain === '') throw new RuntimeException('Stored SMTP password could not be decrypted.');
+    return $plain;
+}
 function consultationEmailHtml(array $booking, string $heading, string $intro): string
 {
     $esc=static fn($value): string => htmlspecialchars(trim((string)$value) !== '' ? (string)$value : 'Not provided',ENT_QUOTES,'UTF-8');
@@ -80,7 +123,7 @@ function consultationEmailHtml(array $booking, string $heading, string $intro): 
 }
 function consultationSendEmail(array $settings, string $to, string $subject, string $html): bool
 {
-    if ($to==='' || !filter_var($to,FILTER_VALIDATE_EMAIL) || empty($settings['smtp_host']) || empty($settings['smtp_username']) || empty($settings['smtp_password_encrypted'])) return false;
+    if ($to==='' || preg_match('/[\r\n]/', $to) || preg_match('/[\r\n]/', $subject) || !filter_var($to,FILTER_VALIDATE_EMAIL) || empty($settings['smtp_host']) || empty($settings['smtp_username']) || empty($settings['smtp_password_encrypted'])) return false;
     $autoload=dirname(__DIR__).'/vendor/autoload.php'; if(!is_file($autoload)){error_log('PHPMailer is not installed.');return false;} require_once $autoload;
     try {$mail=new \PHPMailer\PHPMailer\PHPMailer(true);$mail->isSMTP();$mail->Host=$settings['smtp_host'];$mail->Port=(int)($settings['smtp_port']?:587);$mail->SMTPAuth=true;$mail->Username=$settings['smtp_username'];$mail->Password=consultationDecrypt($settings['smtp_password_encrypted']);$mail->SMTPSecure=($settings['smtp_encryption']??'tls')==='ssl'?\PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS:\PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;$mail->CharSet='UTF-8';$mail->setFrom($settings['smtp_username'],$settings['sender_name']?:'Design24 Studio');$mail->addAddress($to);$mail->isHTML(true);$mail->Subject=$subject;$mail->Body=$html;$mail->AltBody=strip_tags($html);$mail->send();return true;}catch(Throwable $e){error_log('Consultation email: '.$e->getMessage());return false;}
 }

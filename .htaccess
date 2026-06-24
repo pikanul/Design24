@@ -20,7 +20,7 @@ Options -Indexes
     RewriteEngine On
 
     # Never serve private folders.
-    RewriteRule (^|/)(database|backups|config|vendor)(/|$) - [F,L,NC]
+    RewriteRule (^|/)(database|backups|config|includes|admin/includes|vendor)(/|$) - [F,L,NC]
 
     # Never serve sensitive root/config artifacts.
     RewriteRule (^|/)(composer\.(json|lock)|php\.ini|\.env)$ - [F,L,NC]
